@@ -103,12 +103,11 @@ int main(int argc, char* argv[]){
 	SDL_Event event;
 	int split=0;
 	int simulation_running=1;
-    int u_split = -1;
     int index_n = -1;
     int direction = 0; //TEST
     int count=0;
     int t_n = 1;
-    int active_status = 0;
+    int help_me = 0; //HELP ME 
 	while(simulation_running){
 		while(SDL_PollEvent(&event)){
 			if(event.type==SDL_QUIT){
@@ -117,14 +116,14 @@ int main(int argc, char* argv[]){
 		}
 		SDL_FillRect(surface,&erase_rect,COLOR_WHITE);
         for(int k=0;k<2;k++){
+            if(uranium[k].active){
             for(int p=0;p<t_n;p++){
-                if(neutron[p].active && check_collision(neutron[p].x,neutron[p].y,uranium[k].x,uranium[k].y) && uranium[k].active){
+                printf("CHECKED FOR %d\t THE T_N: %d\n", p, t_n);
+                if(neutron[p].active && check_collision(neutron[p].x,neutron[p].y,uranium[k].x,uranium[k].y)){
                         printf("THOKYOOO %.1f\n", uranium[k].r);
-                        u_split = k;
                         uranium[k].active = 0;
                         split=1;
                         count=1;
-                        active_status=p+1;
                         neutron[p].active = 0;
                         printf("P: %d\t", p);
                         for(int i=0;i<3;i++){
@@ -135,8 +134,12 @@ int main(int argc, char* argv[]){
                             generate_random_directions(&neutron[i+t_n].v_x, &neutron[i+t_n].v_y,direction);
                             direction++;    
                         }
+                        help_me+=2;
+                    
             }
+        }
         }}
+
         for(int p=0;p<t_n;p++){
             if(!split && neutron[p].active){
                 FillCircle(surface,neutron[p],COLOR_BLACK);
@@ -149,47 +152,7 @@ int main(int argc, char* argv[]){
                             
                 split=0;
             }}
-        
-        // if(t_n <= MAX_NEUTRONS){
-        //     while(p<t_n){
-        //         for(int k=0;k<2;k++){
-        //             if(neutron[p].active && check_collision(neutron[p].x,neutron[p].y,uranium[k].x,uranium[k].y)){
-        //                 printf("THOKYOOO %.1f\n", uranium[k].r);
-        //                 u_split = k;
-        //                 split=1;
-        //                 count=1;
-        //                 active_status=p+1;
-        //                 neutron[p].active = 0;
-        //                 printf("P: %d\t", p);
-        //                 for(int i=0;i<3;i++){
-        //                     neutron[i+t_n].x = uranium[k].x;
-        //                     neutron[i+t_n].y = uranium[k].y;
-        //                     neutron[i+t_n].r = NEUTRON_RADIUS;
-        //                     neutron[i+t_n].active = 1;
-        //                     generate_random_directions(&neutron[i+t_n].v_x, &neutron[i+t_n].v_y,direction);
-        //                     direction++;
-                            
-        //                 }
-                        
-                        
-        //             }
-                    
-        //         }
-        //     if(!split && neutron[p].active){
-        //         FillCircle(surface,neutron[p],COLOR_BLACK);
-        //         step(&neutron[p]);
-        //     }else{  
-        //         for(int i=0; i<3; i++){
-        //             FillCircle(surface, neutron[t_n+i], COLOR_BLACK);
-        //             step(&neutron[t_n+i]);
-        //         }
-                
-        //         split=0;
-        //     }
-        //     direction = 0;
-        //     p++;
-        // }}
-        // p=active_status;
+
         for(int k=0;k<2;k++){
             if(uranium[k].active){
                  FillCircle(surface,uranium[k], COLOR_BLUE); 
@@ -198,13 +161,11 @@ int main(int argc, char* argv[]){
             }
         }
 
-        
-        
-        // if(count==1){
-        //     printf("TN: %d\t", t_n);
-        //     t_n+=3;
-        //     count=0;
-        // }
+        if(count==1){
+            printf("The count!");
+            count=0;
+            t_n=help_me;
+        }
         
 		SDL_UpdateWindowSurface(window);
 		SDL_Delay(1);
