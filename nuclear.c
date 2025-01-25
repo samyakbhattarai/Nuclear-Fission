@@ -165,6 +165,7 @@ int main(int argc, char* argv[]){
             printf("The count!");
             count=0;
             t_n=help_me;
+            direction=0;
         }
         
 		SDL_UpdateWindowSurface(window);
