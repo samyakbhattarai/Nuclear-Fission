@@ -13,7 +13,7 @@
 #define NEUTRON_RADIUS 6
 #define NEUTRON_VX 1
 #define NEUTRON_VY 0
-#define MAX_NEUTRONS 6
+#define MAX_NEUTRONS 4
 
 //DRAW URANIUM
 #define U_IPX 320
@@ -28,6 +28,7 @@ struct Circle{
 	double r;
 	double v_x;
 	double v_y;
+    int active;
 };
 
 
@@ -55,16 +56,27 @@ void step(struct Circle* body){
 	body->y+=body->v_y;
 }
 
-int check_collision(struct Circle neutron, struct Circle uranium){
-	int d_s = pow(neutron.x-uranium.x,2)+pow(neutron.y-uranium.y,2); //Distance
-	return d_s<=pow(neutron.r+uranium.r,2);
+int check_collision(int nx, int ny, int ux, int uy){
+	int d_s = pow(nx-ux,2)+pow(ny-uy,2); //Distance
+	return d_s<=pow(NEUTRON_RADIUS+URANIUM_RADIUS,2);
 } 
 
 // Generate random directions for velocity
-void generate_random_directions(double* v_x, double* v_y) {
-	double angle = ((double)rand() / RAND_MAX) * 2 * M_PI; // Random angle in radians
-	*v_x = cos(angle);
-	*v_y = sin(angle);
+// void generate_random_directions(double* v_x, double* v_y) {
+// 	double angle = ((double)rand() / RAND_MAX) * 2 * M_PI; // Random angle in radians
+// 	*v_x = cos(angle);
+// 	*v_y = sin(angle);
+// }
+
+void generate_random_directions(double* v_x, double* v_y, int direction) {
+    *v_x=1;
+    if(direction==0){
+        *v_y = 0;
+    }else if(direction==1){
+        *v_y = 1;
+    }else{
+        *v_y = -1;
+    }
 }
 
 //MAIN FUNCTION
@@ -77,15 +89,26 @@ int main(int argc, char* argv[]){
 	SDL_Rect background = (SDL_Rect){0,0,WIDTH,HEIGHT};
 	SDL_FillRect(surface, &background, 0xffffff);
 	// struct Circle uranium = {WIDTH/2,HEIGHT/2,URANIUM_RADIUS,0,0};
-    struct Circle uranium[2] = {{WIDTH/2,HEIGHT/2,URANIUM_RADIUS,0,0},{3*WIDTH/4,HEIGHT/2,URANIUM_RADIUS,0,0}};
-	struct Circle neutron = {10,HEIGHT/2,NEUTRON_RADIUS,NEUTRON_VX,NEUTRON_VY};
-	struct Circle split_neutrons[MAX_NEUTRONS];
+    struct Circle uranium[2] = {{WIDTH/2,HEIGHT/2,URANIUM_RADIUS,0,0,1},{3*WIDTH/4,HEIGHT/2,URANIUM_RADIUS,0,0,1}};
+    struct Circle neutron[MAX_NEUTRONS+1];
+	// neutron[0] = {10,HEIGHT/2,NEUTRON_RADIUS,NEUTRON_VX,NEUTRON_VY};
+    neutron[0].x = 10;
+    neutron[0].y = HEIGHT/2;
+    neutron[0].r = NEUTRON_RADIUS;
+    neutron[0].v_x = NEUTRON_VX;
+    neutron[0].v_y = NEUTRON_VY;
+    neutron[0].active = 1;
+	// struct Circle split_neutrons[MAX_NEUTRONS];
 	SDL_Rect erase_rect = (SDL_Rect){0,0,WIDTH,HEIGHT};
 	SDL_Event event;
 	int split=0;
 	int simulation_running=1;
-    int u_split = 0;
-
+    int u_split = -1;
+    int index_n = -1;
+    int direction = 0; //TEST
+    int count=0;
+    int t_n = 1;
+    int active_status = 0;
 	while(simulation_running){
 		while(SDL_PollEvent(&event)){
 			if(event.type==SDL_QUIT){
@@ -94,37 +117,97 @@ int main(int argc, char* argv[]){
 		}
 		SDL_FillRect(surface,&erase_rect,COLOR_WHITE);
         for(int k=0;k<2;k++){
-            if(!split && check_collision(neutron,uranium[k])){
-                split=1;
-                u_split = k;
+            for(int p=0;p<t_n;p++){
+                if(neutron[p].active && check_collision(neutron[p].x,neutron[p].y,uranium[k].x,uranium[k].y) && uranium[k].active){
+                        printf("THOKYOOO %.1f\n", uranium[k].r);
+                        u_split = k;
+                        uranium[k].active = 0;
+                        split=1;
+                        count=1;
+                        active_status=p+1;
+                        neutron[p].active = 0;
+                        printf("P: %d\t", p);
+                        for(int i=0;i<3;i++){
+                            neutron[i+t_n].x = uranium[k].x;
+                            neutron[i+t_n].y = uranium[k].y;
+                            neutron[i+t_n].r = NEUTRON_RADIUS;
+                            neutron[i+t_n].active = 1;
+                            generate_random_directions(&neutron[i+t_n].v_x, &neutron[i+t_n].v_y,direction);
+                            direction++;    
+                        }
+            }
+        }}
+        for(int p=0;p<t_n;p++){
+            if(!split && neutron[p].active){
+                FillCircle(surface,neutron[p],COLOR_BLACK);
+                step(&neutron[p]);
+            }else{  
                 for(int i=0; i<3; i++){
-                    split_neutrons[i].x = uranium[k].x;
-                    split_neutrons[i].y = uranium[k].y;
-                    split_neutrons[i].r = NEUTRON_RADIUS;
-                    generate_random_directions(&split_neutrons[i].v_x, &split_neutrons[i].v_y);
+                    FillCircle(surface, neutron[t_n+i], COLOR_BLACK);
+                    step(&neutron[t_n+i]);
                 }
-            }
-        }
+                            
+                split=0;
+            }}
+        
+        // if(t_n <= MAX_NEUTRONS){
+        //     while(p<t_n){
+        //         for(int k=0;k<2;k++){
+        //             if(neutron[p].active && check_collision(neutron[p].x,neutron[p].y,uranium[k].x,uranium[k].y)){
+        //                 printf("THOKYOOO %.1f\n", uranium[k].r);
+        //                 u_split = k;
+        //                 split=1;
+        //                 count=1;
+        //                 active_status=p+1;
+        //                 neutron[p].active = 0;
+        //                 printf("P: %d\t", p);
+        //                 for(int i=0;i<3;i++){
+        //                     neutron[i+t_n].x = uranium[k].x;
+        //                     neutron[i+t_n].y = uranium[k].y;
+        //                     neutron[i+t_n].r = NEUTRON_RADIUS;
+        //                     neutron[i+t_n].active = 1;
+        //                     generate_random_directions(&neutron[i+t_n].v_x, &neutron[i+t_n].v_y,direction);
+        //                     direction++;
+                            
+        //                 }
+                        
+                        
+        //             }
+                    
+        //         }
+        //     if(!split && neutron[p].active){
+        //         FillCircle(surface,neutron[p],COLOR_BLACK);
+        //         step(&neutron[p]);
+        //     }else{  
+        //         for(int i=0; i<3; i++){
+        //             FillCircle(surface, neutron[t_n+i], COLOR_BLACK);
+        //             step(&neutron[t_n+i]);
+        //         }
+                
+        //         split=0;
+        //     }
+        //     direction = 0;
+        //     p++;
+        // }}
+        // p=active_status;
         for(int k=0;k<2;k++){
-            if(k==u_split && split==1){
-                FillCircle(surface,uranium[u_split],COLOR_GRAY);
+            if(uranium[k].active){
+                 FillCircle(surface,uranium[k], COLOR_BLUE); 
             }else{
-                FillCircle(surface,uranium[k], COLOR_BLUE);   
+                FillCircle(surface,uranium[k], COLOR_GRAY); 
             }
         }
 
-		if(split==0){
-			FillCircle(surface,neutron,COLOR_BLACK);
-			step(&neutron);
-		}else{
-			for(int i=0; i<3; i++){
-				FillCircle(surface, split_neutrons[i], COLOR_BLACK);
-				step(&split_neutrons[i]);
-			}
-		}
-
+        
+        
+        // if(count==1){
+        //     printf("TN: %d\t", t_n);
+        //     t_n+=3;
+        //     count=0;
+        // }
+        
 		SDL_UpdateWindowSurface(window);
-		SDL_Delay(5);
+		SDL_Delay(1);
 	}
 
 	SDL_DestroyWindow(window);
