@@ -52,17 +52,7 @@ int check_collision(double nx, double ny, double ux, double uy) {
     return distance_squared <= pow(NEUTRON_RADIUS + URANIUM_RADIUS, 2);
 }
 
-// Generate random directions for neutron velocity (direction logic retained)
-// void generate_random_directions(double* v_x, double* v_y, int direction) {
-//     *v_x = NEUTRON_SPEED;
-//     if (direction == 0) {
-//         *v_y = 0;
-//     } else if (direction == 1) {
-//         *v_y = 1;
-//     } else {
-//         *v_y = -1;
-//     }
-// }
+
 
 void generate_random_directions(double *v_x, double *v_y) {
     double angle = ((double)rand() / RAND_MAX) * 2 * M_PI; // Random angle in radians
